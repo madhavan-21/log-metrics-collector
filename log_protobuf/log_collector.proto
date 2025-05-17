@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package logcollector;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "log-collector/protobuf;pb";
+
+service LogReceiver {
+  rpc ReceiveLogs (LogBatch) returns (LogResponse);
+}
+
+message Log {
+  string message = 1;
+  string level = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  string hostname = 4;
+  string service = 5;
+  string file = 6;
+  int32 line = 7;
+  string function = 8;
+}
+
+message LogBatch {
+  repeated Log logs = 1;
+}
+
+message LogResponse {
+  string status = 1;
+}

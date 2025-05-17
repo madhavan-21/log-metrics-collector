@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package metrics;
+
+option go_package = "metric-receiver/protobuf";
+
+import "google/protobuf/timestamp.proto";  // ✅ Add this line
+
+// Define the Metric message
+message Metric {
+    string name = 1;
+    string type = 2;
+    double value = 3;
+    repeated string tags = 4;
+    string project_name = 5;
+    string hostname = 6;
+    string os = 7;
+    string unique_id = 8;
+    google.protobuf.Timestamp timestamp = 9; // ✅ Using imported type
+    string unit = 10;
+
+}
+
+// Define a batch of metrics
+message MetricBatch {
+    repeated Metric metrics = 1;
+}
+
+// Response from the server
+message ReceiveResponse {
+    string status = 1;
+    int32 received_count = 2;
+}
+
+// gRPC Service Definition
+service MetricReceiver {
+    rpc ReceiveMetrics (MetricBatch) returns (ReceiveResponse);
+}
