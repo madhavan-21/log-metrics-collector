@@ -133,12 +133,7 @@ func main() {
 
 ## 📄 License
 
-MIT © \madhavan-21
-
-```
-
-Let me know if you want to include a **metrics sending** feature in the README too — or want to split it into `log_collector` and `metrics_collector` sections.
-```
+MIT © madhavan-21
 
 
 
