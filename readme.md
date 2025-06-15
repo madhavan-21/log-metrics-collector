@@ -1,112 +1,113 @@
-
 ````markdown
-# 📦 Go Log & Metrics Collector
+# 📡 Go Observability Collector
 
-A lightweight Go library to collect and ship logs and metrics to a gRPC-based endpoint. This library is ideal for observability pipelines and can be integrated easily into any Go service.
+A lightweight and pluggable **Go library** for sending structured **logs** and **metrics** to your own gRPC endpoint. Ideal for embedding into any Go microservice or infrastructure component.
 
 ---
 
-## 🚀 Features
+## ✨ Features
 
-- Buffered logging with flush thresholds
-- Automatic periodic flush
-- Structured logs with metadata (timestamp, service, hostname, file, line, function)
-- Graceful shutdown handling (logs flushed on exit)
-- Supports custom log levels: `DEBUG`, `INFO`, `WARN`, `ERROR`
-- Sends logs to your gRPC server using Protobuf
+✅ Unified library for Logs and Metrics  
+✅ Buffered and batch-based transmission  
+✅ Automatic flush on interval or size  
+✅ Graceful shutdown with `SIGINT` / `SIGTERM`  
+✅ Rich metadata (hostname, service name, OS, caller info, etc.)  
+✅ Pluggable into any Go project
 
 ---
 
 ## 📦 Installation
 
 ```bash
-go get github.com/yourusername/logger
+go get github.com/yourusername/observability-collector
 ````
 
-> Replace with your actual module path if hosted privately.
+> Replace with your real module path or structure if you keep logs and metrics as separate packages like `logger` and `metriccollector`.
 
 ---
 
-## 🛠️ Usage
+## 🔌 gRPC Backend Requirements
 
-### 1. Import the package
+You’ll need a gRPC backend with two services:
 
-```go
-import "your_module_path/logger"
-```
-
-### 2. Initialize the log collector
-
-```go
-lc := logger.NewLogCollector("localhost:50051", "my-service", 10, 5*time.Second)
-```
-
-* `localhost:50051`: gRPC server address
-* `"my-service"`: your service name
-* `10`: flush logs after 10 messages
-* `5s`: flush logs every 5 seconds
-
-### 3. Send logs
-
-```go
-lc.Info("Starting the service")
-lc.Debug("Debugging value: %v", value)
-lc.Warn("Something looks suspicious")
-lc.Error("Something went wrong: %v", err)
-```
-
----
-
-## 🧼 Graceful Shutdown
-
-The collector handles `SIGINT` and `SIGTERM`, ensuring logs are flushed before exit:
-
-```bash
-CTRL+C
-🛑 Shutdown detected! Flushing remaining logs...
-🚀 LogCollector stopped.
-```
-
-You can also stop it manually:
-
-```go
-lc.Stop()
-```
-
----
-
-## 🧪 Protobuf
-
-This library expects a gRPC server with the following service:
+### ✅ LogReceiver Service
 
 ```proto
 service LogReceiver {
   rpc ReceiveLogs (LogBatch) returns (LogResponse);
 }
+```
 
-message Log {
-  string message = 1;
-  string level = 2;
-  google.protobuf.Timestamp timestamp = 3;
-  string hostname = 4;
-  string service = 5;
-  string file = 6;
-  int32 line = 7;
-  string function = 8;
-}
+### ✅ MetricReceiver Service
 
-message LogBatch {
-  repeated Log logs = 1;
-}
-
-message LogResponse {
-  string status = 1;
+```proto
+service MetricReceiver {
+  rpc ReceiveMetrics (MetricBatch) returns (MetricResponse);
 }
 ```
 
 ---
 
-## 📎 Example
+## 🛠️ Quickstart
+
+### 1. Initialize Log Collector
+
+```go
+import "your_module_path/logger"
+
+logCollector := logger.NewLogCollector("localhost:50051", "my-service", 10, 5*time.Second)
+
+logCollector.Info("Application started")
+logCollector.Error("Something failed: %v", err)
+```
+
+### 2. Initialize Metric Collector
+
+```go
+import "your_module_path/metriccollector"
+
+metricCollector := metriccollector.NewMetricCollector("localhost:50052", "my-service", 10, 5*time.Second)
+
+metricCollector.Collect("cpu.usage", metriccollector.GAUGE, 0.83, []string{"core:0"}, "percent")
+```
+
+---
+
+## 📋 Metric Types
+
+| Type           | Description                  |
+| -------------- | ---------------------------- |
+| `GAUGE`        | Value that can go up or down |
+| `COUNT`        | Cumulative counter           |
+| `HISTOGRAM`    | Distribution of values       |
+| `RATE`         | Rate of change over time     |
+| `SUMMARY`      | Percentiles                  |
+| `METER`        | Events per time unit         |
+| `DISTRIBUTION` | Custom distributions         |
+| `SET`          | Unique values over time      |
+
+---
+
+## 🧼 Graceful Shutdown
+
+Both collectors handle termination (`SIGINT`, `SIGTERM`) and flush remaining entries:
+
+```bash
+🛑 Shutdown detected! Flushing remaining logs/metrics...
+🚀 LogCollector stopped.
+🚀 MetricCollector stopped.
+```
+
+Or call manually:
+
+```go
+logCollector.Stop()
+metricCollector.Stop()
+```
+
+---
+
+## 📄 Example (Combined)
 
 ```go
 package main
@@ -114,33 +115,35 @@ package main
 import (
 	"time"
 	"your_module_path/logger"
+	"your_module_path/metriccollector"
 )
 
 func main() {
-	lc := logger.NewLogCollector("localhost:50051", "demo-app", 5, 10*time.Second)
+	logs := logger.NewLogCollector("localhost:50051", "combined-service", 10, 5*time.Second)
+	metrics := metriccollector.NewMetricCollector("localhost:50052", "combined-service", 10, 5*time.Second)
 
-	lc.Info("Application started")
-	lc.Debug("Loading configuration")
+	logs.Info("🚀 Starting service")
+	metrics.Collect("requests.total", metriccollector.COUNT, 1, []string{"route:/health"}, "req")
 
-	// Simulate work
-	time.Sleep(15 * time.Second)
+	time.Sleep(10 * time.Second)
 
-	lc.Stop()
+	logs.Stop()
+	metrics.Stop()
 }
 ```
 
 ---
 
-## 📄 License
+---
+
+## 📃 License
 
 MIT © madhavan-21
 
+---
 
+## 👥 Contributors
 
+Built by madhavan-21, inspired by modern observability platforms.
 
-
-```protobuf command
-
-
- protoc --go_out=. --go-grpc_out=. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative protobuf/metrics.proto
 ```
